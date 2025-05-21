@@ -1,0 +1,18 @@
+{
+  "required": true,
+  "minVersion": "0.8",
+  "package": "com.gmail.vincent031525.escapezone.mixin",
+  "compatibilityLevel": "JAVA_8",
+  "refmap": "escapezone.refmap.json",
+  "mixins": [
+    "MixinAbstractContainerScreen",
+    "MixinInventory",
+    "MixinCreativeModeTabs",
+    "MixinCreativeModeTabRegistry"
+  ],
+  "client": [
+  ],
+  "injectors": {
+    "defaultRequire": 1
+  }
+}
