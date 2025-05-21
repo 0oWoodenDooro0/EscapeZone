@@ -43,14 +43,9 @@ public class MixinCreativeModeTabs {
                             output.accept(new ItemStack(Items.EGG));
                             output.accept(new ItemStack(Items.EMERALD));
                             output.accept(new ItemStack(Items.ENDER_EYE));
-                            output.accept(new ItemStack(Items.AIR, 1));
-                            output.accept(new ItemStack(Items.AIR, 1));
-                            output.accept(new ItemStack(Items.AIR, 1));
                             output.accept(new ItemStack(Items.HEART_OF_THE_SEA));
-                            output.accept(new ItemStack(Items.AIR, 1));
                             output.accept(new ItemStack(Items.LAPIS_LAZULI));
                             output.accept(new ItemStack(Items.LEATHER));
-                            output.accept(new ItemStack(Items.AIR, 1));
                             output.accept(new ItemStack(Items.MAGMA_CREAM));
                         })
                         .build()

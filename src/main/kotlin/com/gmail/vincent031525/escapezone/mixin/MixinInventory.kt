@@ -1,6 +1,7 @@
 package com.gmail.vincent031525.escapezone.mixin
 
 import com.gmail.vincent031525.escapezone.EscapeZone
+import com.gmail.vincent031525.escapezone.GridSlot
 import com.gmail.vincent031525.escapezone.component.Collectible
 import com.gmail.vincent031525.escapezone.component.ModDataComponents
 import net.minecraft.CrashReport
@@ -27,16 +28,10 @@ import kotlin.math.min
 abstract class MixinInventory : Container {
 
     @Unique
-    private val inventoryWidth = 9
+    private val hotbarGrid = GridSlot(1, 9)
 
     @Unique
-    private val inventoryHeight = 3
-
-    @Unique
-    private lateinit var itemsGrid: NonNullList<NonNullList<ItemStack>>
-
-    @Unique
-    private val hotbar: NonNullList<ItemStack> = NonNullList.withSize(inventoryWidth, ItemStack.EMPTY)
+    private val itemsGrid = GridSlot(3, 9)
 
     @Shadow
     lateinit var items: NonNullList<ItemStack>
@@ -50,91 +45,53 @@ abstract class MixinInventory : Container {
     @Shadow
     lateinit var player: Player
 
-    @Inject(method = ["<init>(Lnet/minecraft/world/entity/player/Player;)V"], at = [At("RETURN")])
-    private fun InventoryConstructed(player: Player, ci: CallbackInfo) {
-        itemsGrid = NonNullList.create()
-        for (i in 0..<this.inventoryHeight) {
-            itemsGrid.add(NonNullList.withSize(this.inventoryWidth, ItemStack.EMPTY))
-        }
-    }
-
     @Unique
     private fun getItemCollectible(itemStack: ItemStack): Collectible {
         return itemStack.getOrDefault(ModDataComponents.collectible, Collectible())
     }
 
     @Unique
-    private fun changeItemInGrid(index: Int, itemStack: ItemStack): Boolean {
-        val collectible = getItemCollectible(itemStack)
+    private fun getGridSlotIsEmpty(index: Int, collectible: Collectible): Boolean {
         if (index < 9) {
-            if (collectible.quality == -1) {
-                hotbar[index] = itemStack
-                EscapeZone.LOGGER.info(itemsGrid)
-                return true
-            }
-            return false
+            return hotbarGrid.isEmpty(index, collectible.height, collectible.width)
         }
-        if (!getItemIsEmptyInGrid(index, collectible)) return false
-        val index = index - 9
-        for (height in 0..<collectible.height) {
-            for (width in 0..<collectible.width) {
-                itemsGrid[index / inventoryWidth + height][index % inventoryWidth + width] = itemStack
-            }
-        }
-        EscapeZone.LOGGER.info(itemsGrid)
-        return true
+        return itemsGrid.isEmpty(index - 9, collectible.height, collectible.width)
     }
 
     @Unique
-    private fun getFreeHotBarSlot(): Int {
-        for (i in hotbar.indices) {
-            if (hotbar[i].isEmpty) {
-                return i
-            }
+    private fun setGridSlot(index: Int, itemStack: ItemStack, itemHeight: Int, itemWidth: Int) {
+        if (index < 9) {
+            hotbarGrid.setItem(index, itemStack, itemHeight, itemWidth)
+        } else {
+            itemsGrid.setItem(index - 9, itemStack, itemHeight, itemWidth)
         }
-        return -1
     }
 
     @Unique
-    private fun getFreeItemSlot(collectible: Collectible): Int {
-        for (column in 0..<inventoryHeight - collectible.height + 1) {
-            for (row in 0..<inventoryWidth - collectible.width + 1) {
-                if (getItemIsEmptyInGrid(column * inventoryWidth + row + 9, collectible)) {
-                    return column * inventoryWidth + row + 9
-                }
-            }
+    private fun removeGridSlot(index: Int, itemHeight: Int, itemWidth: Int) {
+        if (index < 9) {
+            hotbarGrid.setItem(index, ItemStack.EMPTY, itemHeight, itemWidth)
+        } else {
+            itemsGrid.setItem(index - 9, ItemStack.EMPTY, itemHeight, itemWidth)
         }
-        return -1
     }
 
     @Unique
-    private fun getItemIsEmptyInGrid(index: Int, collectible: Collectible): Boolean {
-        if (index < 9 && collectible.quality == -1) {
-            return hotbar[index].isEmpty
-        }
-        val index = index - 9
-        for (height in 0..<collectible.height) {
-            for (width in 0..<collectible.width) {
-                if (!itemsGrid[index / inventoryWidth + height][index % inventoryWidth + width].isEmpty) return false
-            }
-        }
-        return true
+    private fun getFreeGridSlot(itemHeight: Int, itemWidth: Int): Int {
+        val slot = hotbarGrid.getFreeSlot(itemHeight, itemWidth)
+        if (slot != -1) return slot
+        return itemsGrid.getFreeSlot(itemHeight, itemWidth) + 9
     }
 
-    @Inject(method = ["getFreeSlot"], at = [At("HEAD")], cancellable = true)
-    fun injectGetFreeSlot(cir: CallbackInfoReturnable<Int>) {
-        cir.cancel()
+    @Unique
+    private fun clearGridSlot() {
+        hotbarGrid.clear()
+        itemsGrid.clear()
+    }
 
-        for (column in itemsGrid.indices) {
-            for (row in itemsGrid[column].indices) {
-                if (itemsGrid[column][row].isEmpty) {
-                    cir.returnValue = column * inventoryWidth + row + 9
-                    return
-                }
-            }
-
-            cir.returnValue = -1
-        }
+    @Unique
+    private fun isAllEmptyGridSlot(): Boolean {
+        return hotbarGrid.isAllEmpty() && itemsGrid.isAllEmpty()
     }
 
     @Shadow
@@ -143,13 +100,10 @@ abstract class MixinInventory : Container {
     @Inject(method = ["addResource(Lnet/minecraft/world/item/ItemStack;)I"], at = [At("HEAD")], cancellable = true)
     private fun injectAddResource(stack: ItemStack, cir: CallbackInfoReturnable<Int>) {
         var i = getSlotWithRemainingSpace(stack)
+        EscapeZone.LOGGER.info(i)
         val collectible = getItemCollectible(stack)
-        if (collectible.quality == -1) {
-            i = getFreeHotBarSlot()
-        }
-        if (i == -1) {
-            i = getFreeItemSlot(collectible)
-        }
+        if (i == -1) i = getFreeGridSlot(collectible.height, collectible.width)
+        EscapeZone.LOGGER.info(i)
 
         cir.returnValue = if (i == -1) stack.count else this.addResource(i, stack)
     }
@@ -163,9 +117,11 @@ abstract class MixinInventory : Container {
 
         var i = stack.count
         var itemstack = getItem(slot)
-        if (getItemIsEmptyInGrid(slot, getItemCollectible(itemstack))) {
+        val collectible = getItemCollectible(itemstack)
+        if (getGridSlotIsEmpty(slot, collectible)) {
             itemstack = stack.copyWithCount(0)
-            if (changeItemInGrid(slot, itemstack)) setItem(slot, itemstack)
+            setItem(slot, itemstack)
+            setGridSlot(slot, itemstack, collectible.height, collectible.width)
         }
 
         val j = getMaxStackSize(itemstack) - itemstack.count
@@ -194,23 +150,17 @@ abstract class MixinInventory : Container {
         } else {
             try {
                 cir.returnValue = if (stack.isDamaged) {
+                    val collectible = getItemCollectible(stack)
                     if (slot == -1) {
-                        val collectible = getItemCollectible(stack)
-                        slot = if (collectible.quality == -1) {
-                            getFreeHotBarSlot()
-                        } else {
-                            getFreeItemSlot(collectible)
-                        }
+                        slot = getFreeGridSlot(collectible.height, collectible.width)
                     }
 
                     if (slot >= 0) {
-                        if (changeItemInGrid(slot, stack.copyAndClear())) {
-                            items[slot] = stack.copyAndClear()
-                            items[slot].popTime = 5
-                            true
-                        } else {
-                            throw Exception("No space in inventory")
-                        }
+                        val itemStack = stack.copyAndClear()
+                        items[slot] = itemStack
+                        items[slot].popTime = 5
+                        setGridSlot(slot, itemStack, collectible.height, collectible.width)
+                        true
                     } else if (player.hasInfiniteMaterials()) {
                         stack.count = 0
                         true
@@ -261,7 +211,8 @@ abstract class MixinInventory : Container {
                 return
             }
             val itemStack = ContainerHelper.removeItem(items, index, count)
-            changeItemInGrid(index, itemStack)
+            val collectible = getItemCollectible(itemStack)
+            removeGridSlot(index, collectible.height, collectible.width)
             cir.returnValue = itemStack
             return
         }
@@ -297,7 +248,8 @@ abstract class MixinInventory : Container {
         for (i in items.indices) {
             if (items[i] == stack) {
                 items[i] = ItemStack.EMPTY
-                changeItemInGrid(i, ItemStack.EMPTY)
+                val collectible = getItemCollectible(stack)
+                removeGridSlot(i, collectible.height, collectible.width)
                 return
             }
         }
@@ -326,8 +278,9 @@ abstract class MixinInventory : Container {
                 cir.returnValue = ItemStack.EMPTY
                 return
             }
+            val collectible = getItemCollectible(items[index])
+            removeGridSlot(index, collectible.height, collectible.width)
             items[index] = ItemStack.EMPTY
-            changeItemInGrid(index, ItemStack.EMPTY)
             cir.returnValue = items[index]
             return
         }
@@ -362,7 +315,9 @@ abstract class MixinInventory : Container {
         var index = index
 
         if (index < items.size) {
-            if (changeItemInGrid(index, stack)) items[index] = stack
+            items[index] = stack
+            val collectible = getItemCollectible(stack)
+            setGridSlot(index, stack, collectible.height, collectible.width)
             return
         }
         index -= items.size
@@ -383,8 +338,7 @@ abstract class MixinInventory : Container {
         items.clear()
         armor.clear()
         offhand.clear()
-        for (row in itemsGrid) row.clear()
-
+        clearGridSlot()
 
         for (i in listTag.indices) {
             val compoundtag = listTag.getCompound(i)
@@ -393,7 +347,8 @@ abstract class MixinInventory : Container {
             when {
                 j >= 0 && j < items.size -> {
                     items[j] = itemstack
-                    changeItemInGrid(j, itemstack)
+                    val collectible = getItemCollectible(itemstack)
+                    setGridSlot(j, itemstack, collectible.height, collectible.width)
                 }
 
                 j >= 100 && j < armor.size + 100 -> armor[j - 100] = itemstack
@@ -406,13 +361,9 @@ abstract class MixinInventory : Container {
     fun isEmpty(cir: CallbackInfoReturnable<Boolean>) {
         cir.cancel()
 
-        for (row in itemsGrid) {
-            for (itemStack in row) {
-                if (!itemStack.isEmpty) {
-                    cir.returnValue = false
-                    return
-                }
-            }
+        if (!isAllEmptyGridSlot()) {
+            cir.returnValue = false
+            return
         }
 
         for (itemstack1 in armor) {
@@ -442,7 +393,8 @@ abstract class MixinInventory : Container {
             if (!itemstack.isEmpty) {
                 this.player.drop(itemstack, true, false)
                 items[i] = ItemStack.EMPTY
-                changeItemInGrid(i, ItemStack.EMPTY)
+                val collectible = getItemCollectible(itemstack)
+                removeGridSlot(i, collectible.height, collectible.width)
             }
         }
 
