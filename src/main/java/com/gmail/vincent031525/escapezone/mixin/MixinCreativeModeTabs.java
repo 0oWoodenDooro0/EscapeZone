@@ -47,6 +47,35 @@ public class MixinCreativeModeTabs {
                             output.accept(new ItemStack(Items.LAPIS_LAZULI));
                             output.accept(new ItemStack(Items.LEATHER));
                             output.accept(new ItemStack(Items.MAGMA_CREAM));
+                            output.accept(new ItemStack(Items.NAUTILUS_SHELL));
+                            output.accept(new ItemStack(Items.NETHER_STAR));
+                            output.accept(new ItemStack(Items.PHANTOM_MEMBRANE));
+                            output.accept(new ItemStack(Items.RESIN_CLUMP));
+                            output.accept(new ItemStack(Items.SHULKER_SHELL));
+                            output.accept(new ItemStack(Items.SLIME_BALL));
+                            output.accept(new ItemStack(Items.STICK));
+                            output.accept(new ItemStack(Items.STRING));
+                            output.accept(new ItemStack(Items.TURTLE_SCUTE));
+                            output.accept(new ItemStack(Items.NETHERITE_INGOT));
+                            output.accept(new ItemStack(Items.NETHERITE_SCRAP));
+                            output.accept(new ItemStack(Items.NETHERITE_UPGRADE_SMITHING_TEMPLATE));
+                            output.accept(new ItemStack(Items.IRON_HORSE_ARMOR));
+                            output.accept(new ItemStack(Items.GOLDEN_HORSE_ARMOR));
+                            output.accept(new ItemStack(Items.DIAMOND_HORSE_ARMOR));
+                            output.accept(new ItemStack(Items.CLOCK));
+                            output.accept(new ItemStack(Items.COMPASS));
+                            output.accept(new ItemStack(Items.NAME_TAG));
+                            output.accept(new ItemStack(Items.SPYGLASS));
+                            output.accept(new ItemStack(Items.RECOVERY_COMPASS));
+                            output.accept(new ItemStack(Items.MUSIC_DISC_11));
+                            output.accept(new ItemStack(Items.MUSIC_DISC_5));
+                            output.accept(new ItemStack(Items.END_CRYSTAL));
+                            output.accept(new ItemStack(Items.SADDLE));
+                            output.accept(new ItemStack(Items.TRIAL_KEY));
+                            output.accept(new ItemStack(Items.OMINOUS_TRIAL_KEY));
+                            output.accept(new ItemStack(Items.HEAVY_CORE));
+                            output.accept(new ItemStack(Items.DRAGON_HEAD));
+                            output.accept(new ItemStack(Items.DRAGON_EGG));
                         })
                         .build()
         ));

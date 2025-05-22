@@ -10,13 +10,13 @@ class GridSlot(private val gridHeight: Int, private val gridWidth: Int) {
         }
     }
 
-    fun indexToGridPos(index: Int, column: Int = 0, row: Int = 0): Pair<Int, Int> {
+    private fun indexToGridPos(index: Int, column: Int = 0, row: Int = 0): Pair<Int, Int> {
         val x = index % gridWidth + row
         val y = index / gridWidth + column
         return Pair(y, x)
     }
 
-    fun gridPosToIndex(column: Int, row: Int): Int {
+    private fun gridPosToIndex(column: Int, row: Int): Int {
         val index = column * gridWidth + row
         return index
     }
@@ -45,8 +45,7 @@ class GridSlot(private val gridHeight: Int, private val gridWidth: Int) {
         }
     }
 
-
-    fun isEmpty(index: Int, itemHeight: Int, itemWidth: Int): Boolean {
+    private fun isEmpty(index: Int, itemHeight: Int, itemWidth: Int): Boolean {
         for (c in 0..<itemHeight) {
             for (r in 0..<itemWidth) {
                 val (column, row) = indexToGridPos(index, c, r)

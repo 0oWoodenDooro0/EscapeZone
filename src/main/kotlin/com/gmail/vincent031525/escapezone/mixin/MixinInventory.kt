@@ -51,28 +51,11 @@ abstract class MixinInventory : Container {
     }
 
     @Unique
-    private fun getGridSlotIsEmpty(index: Int, collectible: Collectible): Boolean {
-        if (index < 9) {
-            return hotbarGrid.isEmpty(index, collectible.height, collectible.width)
-        }
-        return itemsGrid.isEmpty(index - 9, collectible.height, collectible.width)
-    }
-
-    @Unique
     private fun setGridSlot(index: Int, itemStack: ItemStack, itemHeight: Int, itemWidth: Int) {
         if (index < 9) {
             hotbarGrid.setItem(index, itemStack, itemHeight, itemWidth)
         } else {
             itemsGrid.setItem(index - 9, itemStack, itemHeight, itemWidth)
-        }
-    }
-
-    @Unique
-    private fun removeGridSlot(index: Int, itemHeight: Int, itemWidth: Int) {
-        if (index < 9) {
-            hotbarGrid.setItem(index, ItemStack.EMPTY, itemHeight, itemWidth)
-        } else {
-            itemsGrid.setItem(index - 9, ItemStack.EMPTY, itemHeight, itemWidth)
         }
     }
 
@@ -100,10 +83,8 @@ abstract class MixinInventory : Container {
     @Inject(method = ["addResource(Lnet/minecraft/world/item/ItemStack;)I"], at = [At("HEAD")], cancellable = true)
     private fun injectAddResource(stack: ItemStack, cir: CallbackInfoReturnable<Int>) {
         var i = getSlotWithRemainingSpace(stack)
-        EscapeZone.LOGGER.info(i)
         val collectible = getItemCollectible(stack)
         if (i == -1) i = getFreeGridSlot(collectible.height, collectible.width)
-        EscapeZone.LOGGER.info(i)
 
         cir.returnValue = if (i == -1) stack.count else this.addResource(i, stack)
     }
@@ -116,12 +97,13 @@ abstract class MixinInventory : Container {
         cir.cancel()
 
         var i = stack.count
+        EscapeZone.LOGGER.info(slot)
         var itemstack = getItem(slot)
-        val collectible = getItemCollectible(itemstack)
-        if (getGridSlotIsEmpty(slot, collectible)) {
+        if (itemstack.isEmpty) {
             itemstack = stack.copyWithCount(0)
+            EscapeZone.LOGGER.info(stack)
+            EscapeZone.LOGGER.info(stack.copyWithCount(0))
             setItem(slot, itemstack)
-            setGridSlot(slot, itemstack, collectible.height, collectible.width)
         }
 
         val j = getMaxStackSize(itemstack) - itemstack.count
@@ -132,6 +114,7 @@ abstract class MixinInventory : Container {
         }
         i -= k
         itemstack.grow(k)
+        setItem(slot, itemstack)
         itemstack.popTime = 5
         cir.returnValue = i
     }
@@ -172,6 +155,7 @@ abstract class MixinInventory : Container {
                     do {
                         i = stack.count
                         if (slot == -1) {
+                            EscapeZone.LOGGER.info(stack)
                             stack.count = addResource(stack)
                         } else {
                             stack.count = addResource(slot, stack)
@@ -212,7 +196,7 @@ abstract class MixinInventory : Container {
             }
             val itemStack = ContainerHelper.removeItem(items, index, count)
             val collectible = getItemCollectible(itemStack)
-            removeGridSlot(index, collectible.height, collectible.width)
+            setGridSlot(index, itemStack, collectible.height, collectible.width)
             cir.returnValue = itemStack
             return
         }
@@ -247,9 +231,7 @@ abstract class MixinInventory : Container {
 
         for (i in items.indices) {
             if (items[i] == stack) {
-                items[i] = ItemStack.EMPTY
-                val collectible = getItemCollectible(stack)
-                removeGridSlot(i, collectible.height, collectible.width)
+                setItem(i, ItemStack.EMPTY)
                 return
             }
         }
@@ -267,8 +249,11 @@ abstract class MixinInventory : Container {
         }
     }
 
+    @Shadow
+    abstract override fun removeItemNoUpdate(index: Int): ItemStack
+
     @Inject(method = ["removeItemNoUpdate"], at = [At("HEAD")], cancellable = true)
-    fun removeItemNoUpdate(index: Int, cir: CallbackInfoReturnable<ItemStack>) {
+    fun injectRemoveItemNoUpdate(index: Int, cir: CallbackInfoReturnable<ItemStack>) {
         cir.cancel()
 
         var index = index
@@ -278,9 +263,7 @@ abstract class MixinInventory : Container {
                 cir.returnValue = ItemStack.EMPTY
                 return
             }
-            val collectible = getItemCollectible(items[index])
-            removeGridSlot(index, collectible.height, collectible.width)
-            items[index] = ItemStack.EMPTY
+            setItem(index, ItemStack.EMPTY)
             cir.returnValue = items[index]
             return
         }
@@ -392,9 +375,7 @@ abstract class MixinInventory : Container {
             val itemstack = items[i]
             if (!itemstack.isEmpty) {
                 this.player.drop(itemstack, true, false)
-                items[i] = ItemStack.EMPTY
-                val collectible = getItemCollectible(itemstack)
-                removeGridSlot(i, collectible.height, collectible.width)
+                removeItemNoUpdate(i)
             }
         }
 
