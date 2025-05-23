@@ -61,9 +61,11 @@ abstract class MixinInventory : Container {
 
     @Unique
     private fun getFreeGridSlot(itemHeight: Int, itemWidth: Int): Int {
-        val slot = hotbarGrid.getFreeSlot(itemHeight, itemWidth)
+        var slot = hotbarGrid.getFreeSlot(itemHeight, itemWidth)
         if (slot != -1) return slot
-        return itemsGrid.getFreeSlot(itemHeight, itemWidth) + 9
+        slot = itemsGrid.getFreeSlot(itemHeight, itemWidth)
+        if (slot != -1) return slot + 9
+        return slot
     }
 
     @Unique
@@ -97,12 +99,9 @@ abstract class MixinInventory : Container {
         cir.cancel()
 
         var i = stack.count
-        EscapeZone.LOGGER.info(slot)
         var itemstack = getItem(slot)
         if (itemstack.isEmpty) {
             itemstack = stack.copyWithCount(0)
-            EscapeZone.LOGGER.info(stack)
-            EscapeZone.LOGGER.info(stack.copyWithCount(0))
             setItem(slot, itemstack)
         }
 
@@ -114,8 +113,8 @@ abstract class MixinInventory : Container {
         }
         i -= k
         itemstack.grow(k)
-        setItem(slot, itemstack)
         itemstack.popTime = 5
+        setItem(slot, itemstack)
         cir.returnValue = i
     }
 
@@ -140,9 +139,8 @@ abstract class MixinInventory : Container {
 
                     if (slot >= 0) {
                         val itemStack = stack.copyAndClear()
-                        items[slot] = itemStack
-                        items[slot].popTime = 5
-                        setGridSlot(slot, itemStack, collectible.height, collectible.width)
+                        itemStack.popTime = 5
+                        setItem(slot, itemStack)
                         true
                     } else if (player.hasInfiniteMaterials()) {
                         stack.count = 0
@@ -155,7 +153,6 @@ abstract class MixinInventory : Container {
                     do {
                         i = stack.count
                         if (slot == -1) {
-                            EscapeZone.LOGGER.info(stack)
                             stack.count = addResource(stack)
                         } else {
                             stack.count = addResource(slot, stack)
