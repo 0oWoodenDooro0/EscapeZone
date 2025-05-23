@@ -1,7 +1,9 @@
 package com.gmail.vincent031525.escapezone
 
 import com.gmail.vincent031525.escapezone.component.ModDataComponents
+import com.gmail.vincent031525.escapezone.event.ModClientEvent
 import com.gmail.vincent031525.escapezone.event.ModEvents
+import com.gmail.vincent031525.escapezone.menu.ModMenuTypes
 import net.minecraft.client.Minecraft
 import net.neoforged.bus.api.SubscribeEvent
 import net.neoforged.fml.common.EventBusSubscriber
@@ -26,8 +28,10 @@ object EscapeZone {
         LOGGER.log(Level.INFO, "Hello world!")
 
         ModDataComponents.register(MOD_BUS)
+        ModMenuTypes.menus.register(MOD_BUS)
 
         MOD_BUS.register(ModEvents)
+        MOD_BUS.register(ModClientEvent)
 
         val obj = runForDist(clientTarget = {
             MOD_BUS.addListener(::onClientSetup)

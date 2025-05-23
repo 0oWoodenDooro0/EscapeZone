@@ -8,7 +8,8 @@
     "MixinAbstractContainerScreen",
     "MixinInventory",
     "MixinCreativeModeTabs",
-    "MixinCreativeModeTabRegistry"
+    "MixinCreativeModeTabRegistry",
+    "MixinMinecraft"
   ],
   "client": [
   ],

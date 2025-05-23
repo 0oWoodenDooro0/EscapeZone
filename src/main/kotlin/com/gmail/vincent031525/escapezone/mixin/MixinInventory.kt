@@ -1,9 +1,8 @@
 package com.gmail.vincent031525.escapezone.mixin
 
-import com.gmail.vincent031525.escapezone.EscapeZone
-import com.gmail.vincent031525.escapezone.GridSlot
 import com.gmail.vincent031525.escapezone.component.Collectible
 import com.gmail.vincent031525.escapezone.component.ModDataComponents
+import com.gmail.vincent031525.escapezone.core.GridSlot
 import net.minecraft.CrashReport
 import net.minecraft.ReportedException
 import net.minecraft.core.NonNullList

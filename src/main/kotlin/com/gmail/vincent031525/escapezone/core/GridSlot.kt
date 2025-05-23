@@ -1,4 +1,4 @@
-package com.gmail.vincent031525.escapezone
+package com.gmail.vincent031525.escapezone.core
 
 import net.minecraft.core.NonNullList
 import net.minecraft.world.item.ItemStack
@@ -45,6 +45,15 @@ class GridSlot(private val gridHeight: Int, private val gridWidth: Int) {
         }
     }
 
+    fun removeItem(index: Int, itemHeight: Int, itemWidth: Int) {
+        for (c in 0..<itemHeight) {
+            for (r in 0..<itemWidth) {
+                val (column, row) = indexToGridPos(index, c, r)
+                itemsGrid[column][row] = ItemStack.EMPTY
+            }
+        }
+    }
+
     private fun isEmpty(index: Int, itemHeight: Int, itemWidth: Int): Boolean {
         for (c in 0..<itemHeight) {
             for (r in 0..<itemWidth) {
@@ -55,13 +64,15 @@ class GridSlot(private val gridHeight: Int, private val gridWidth: Int) {
         return true
     }
 
-    fun clear(){
+    fun clear() {
         for (column in 0..<gridHeight) {
-            itemsGrid[column].clear()
+            for (row in 0..<gridWidth) {
+                itemsGrid[column][row] = ItemStack.EMPTY
+            }
         }
     }
 
-    fun isAllEmpty(): Boolean{
+    fun isAllEmpty(): Boolean {
         for (column in 0..<gridHeight) {
             for (row in 0..<gridWidth) {
                 if (!itemsGrid[column][row].isEmpty) return false
