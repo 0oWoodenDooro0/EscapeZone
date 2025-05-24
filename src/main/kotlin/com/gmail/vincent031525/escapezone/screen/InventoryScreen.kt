@@ -18,6 +18,10 @@ class InventoryScreen(menu: InventoryMenu, inventory: Inventory, title: Componen
     private var xMouse: Float = 0f
     private var yMouse: Float = 0f
 
+    init {
+        imageHeight = 164
+    }
+
     override fun render(guiGraphics: GuiGraphics, p1: Int, p2: Int, p3: Float) {
         super.render(guiGraphics, p1, p2, p3)
         xMouse = p1.toFloat()
